@@ -1,0 +1,23 @@
+
+[package]
+edition = "2018"
+name = "near-non-transferrable-token"
+version = "0.0.0"
+authors = ["Popula <hi@popula.io>"]
+description = "NEAR smart contracts library.\n"
+homepage = "https://popula.io"
+categories = ["wasm"]
+license = "GPL-3.0"
+repository = "https://github.com/beepopula/near-non-transferrable-token"
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies.near-sdk]
+version = "=4.1.0-pre.3"
+
+[dependencies.serde]
+version = "1"
+
+[dependencies.serde_json]
+version = "1"
