@@ -1,4 +1,4 @@
-use near_contract_standards::storage_management::{StorageBalance, StorageBalanceBounds, StorageManagement};
+use crate::storage_management::{StorageBalance, StorageBalanceBounds, StorageManagement};
 use near_sdk::json_types::U128;
 use near_sdk::{assert_one_yocto, env, log, AccountId, Balance, Promise};
 

@@ -1,9 +1,10 @@
 use near_sdk::{ext_contract, json_types::U128, AccountId};
 use crate::*;
+use fungible_token::core::TokenDest;
 
 #[ext_contract(ext_ft_resolver)]
 pub trait FungibleTokenResolver {
-    fn ft_resolve_transfer(
+    fn ft_resolve_deposit(
         &mut self,
         sender_id: AccountId,
         receiver_id: AccountId,

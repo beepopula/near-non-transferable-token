@@ -4,6 +4,7 @@ pub mod storage_impl;
 pub mod macros;
 pub mod resolver;
 pub mod receiver;
+pub mod events;
 
 pub use core_impl::FungibleToken;
 pub use macros::*;

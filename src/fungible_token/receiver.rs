@@ -21,7 +21,7 @@ pub trait FungibleTokenReceiver {
     /// - `msg` - a string message that was passed with this transfer call.
     ///
     /// Returns the amount of unused tokens that should be returned to sender, in a decimal string representation.
-    fn ft_on_transfer(
+    fn ft_on_deposit(
         &mut self,
         sender_id: AccountId,
         amount: U128,

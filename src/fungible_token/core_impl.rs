@@ -2,7 +2,8 @@
 use std::collections::{HashSet, HashMap};
 use std::hash::Hash;
 
-use near_contract_standards::fungible_token::events::{FtMint, FtBurn, FtTransfer};
+use crate::fungible_token::events::{FtMint, FtBurn, FtDeposit};
+use crate::fungible_token::receiver::ext_ft_receiver;
 
 use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
 use near_sdk::collections::{LookupMap, UnorderedMap};
@@ -11,17 +12,19 @@ use near_sdk::serde::{Serialize, Deserialize};
 use near_sdk::serde_json::json;
 use near_sdk::{
     assert_one_yocto, env, log, require, AccountId, Balance, Gas, IntoStorageKey, PromiseOrValue,
-    PromiseResult, StorageUsage,
+    PromiseResult, StorageUsage, ext_contract,
 };
 
-use crate::ntft::receiver::ext_ft_receiver;
-use crate::ntft::resolver::ext_ft_resolver;
+use crate::fungible_token::core::{TokenSource, TokenDest, FungibleTokenAccount};
+use crate::fungible_token::core::FungibleTokenCore;
+use crate::fungible_token::resolver::{FungibleTokenResolver, ext_ft_resolver};
 
-use super::core::{FungibleTokenCore, TokenSource, TokenDest, FungibleTokenAccount};
-use super::resolver::FungibleTokenResolver;
 
 const GAS_FOR_RESOLVE_TRANSFER: Gas = Gas(5_000_000_000_000);
 const GAS_FOR_FT_TRANSFER_CALL: Gas = Gas(25_000_000_000_000 + GAS_FOR_RESOLVE_TRANSFER.0);
+
+
+
 
 #[derive(BorshDeserialize, BorshSerialize)]
 pub struct Account {
@@ -202,11 +205,8 @@ impl FungibleToken {
 }
 
 impl FungibleTokenCore for FungibleToken {
-    fn ft_transfer(&mut self, receiver_id: AccountId, amount: U128, memo: Option<String>) {
-        unreachable!()
-    }
 
-    fn ft_transfer_call(
+    fn ft_deposit_call(
         &mut self,
         receiver_id: AccountId,
         amount: U128,
@@ -287,7 +287,7 @@ impl FungibleToken {
 }
 
 impl FungibleTokenResolver for FungibleToken {
-    fn ft_resolve_transfer(
+    fn ft_resolve_deposit(
         &mut self,
         sender_id: AccountId,
         receiver_id: AccountId,

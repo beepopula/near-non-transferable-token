@@ -49,13 +49,13 @@ macro_rules! impl_fungible_token_core {
         #[near_bindgen]
         impl FungibleTokenResolver for $contract {
             #[private]
-            fn ft_resolve_transfer(
+            fn ft_resolve_deposit(
                 &mut self,
                 sender_id: AccountId,
                 receiver_id: AccountId,
                 amount: U128,
             ) -> U128 {
-                self.$token.ft_resolve_transfer(sender_id, receiver_id, amount).into()
+                self.$token.ft_resolve_deposit(sender_id, receiver_id, amount).into()
             }
 
             #[private]
