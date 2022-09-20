@@ -11,24 +11,22 @@ use near_sdk::serde::{Serialize, Deserialize};
 #[derive(Serialize, Deserialize, Clone)]
 #[serde(crate = "near_sdk::serde")]
 pub enum TokenSource {
-    Building,
-    Fueling
-}
-
-#[derive(BorshDeserialize, BorshSerialize, PartialOrd, PartialEq, Eq, Hash)]
-#[derive(Serialize, Deserialize, Clone)]
-#[serde(crate = "near_sdk::serde")]
-pub enum TokenDest {
-    Building,
-    MemberRewards
+    ApplicationValue,
+    FinancialValue
 }
 
 pub trait FungibleTokenAccount {
-    fn deposit(&mut self, contract_id: &AccountId, token_source: &TokenSource, amount: Balance) -> bool;
+    fn deposit(&mut self, contract_id: &AccountId, token_source: &TokenSource, amount: Balance);
 
-    fn withdraw(&mut self, contract_id: &AccountId, token_dest: &TokenDest, amount: Balance) -> bool;
+    fn withdraw(&mut self, contract_id: &AccountId, token_source: &TokenSource, amount: Balance) -> u128;
+
+    fn contract_deposit(&mut self, contract_id: &AccountId, deposit_contract_id: &AccountId, token_source: &TokenSource, amount: Balance);
+
+    fn contract_withdraw(&mut self, contract_id: &AccountId, deposit_contract_id: &Option<AccountId>, token_source: &TokenSource, amount: Balance) -> Vec<(AccountId, u128)>;
 
     fn get_balance(&self, contract_id: &Option<AccountId>, token_source: &Option<TokenSource>) -> u128;
+
+    fn get_deposit_balance(&self, contract_id: &AccountId, token_source: &Option<TokenSource>) -> u128;
 
     fn is_registered(&self, contract_id: &AccountId) -> bool;
 }
@@ -75,15 +73,17 @@ pub trait FungibleTokenCore {
     fn ft_deposit_call(
         &mut self,
         receiver_id: AccountId,
+        contract_id: AccountId,
+        token_source: Option<TokenSource>,
         amount: U128,
-        memo: Option<String>,
         msg: String,
     ) -> PromiseOrValue<U128>;
 
     fn ft_burn_call(
         &mut self,
+        receiver_id: AccountId,
         contract_id: AccountId,
-        token_dest: TokenDest,
+        token_source: Option<TokenSource>,
         amount: U128,
         msg: String,
     ) -> PromiseOrValue<U128>;

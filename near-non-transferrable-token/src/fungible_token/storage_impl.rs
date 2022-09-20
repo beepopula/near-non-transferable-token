@@ -2,7 +2,7 @@ use crate::storage_management::{StorageBalance, StorageBalanceBounds, StorageMan
 use near_sdk::json_types::U128;
 use near_sdk::{assert_one_yocto, env, log, AccountId, Balance, Promise};
 
-use super::core::{FungibleTokenAccount, TokenDest};
+use super::core::{FungibleTokenAccount, TokenSource};
 use super::core_impl::FungibleToken;
 
 impl FungibleToken {
@@ -21,7 +21,7 @@ impl FungibleToken {
             for (contract_id, token_map) in account.contract_ids.iter() {
                 if let Some(contract_id) = contract_id {
                     let total = self.total_supply.get_balance(&Some(contract_id.clone()), &None);
-                    self.total_supply.withdraw(&contract_id, &TokenDest::Building, total);
+                    self.total_supply.withdraw(&contract_id, &TokenSource::ApplicationValue, total);
                 }
             }
         } else {
@@ -65,7 +65,7 @@ impl StorageManagement for FungibleToken {
                 env::panic_str("The attached deposit is less than the minimum storage balance");
             }
 
-            self.internal_register_account(&account_id, None);
+            self.internal_register_account(&account_id);
             let refund = amount - min_balance;
             if refund > 0 {
                 Promise::new(env::predecessor_account_id()).transfer(refund);

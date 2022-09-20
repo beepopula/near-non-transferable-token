@@ -1,21 +1,21 @@
 use near_sdk::{ext_contract, json_types::U128, AccountId};
-use crate::*;
-use fungible_token::core::TokenDest;
+use super::core::TokenSource; 
 
 #[ext_contract(ext_ft_resolver)]
 pub trait FungibleTokenResolver {
     fn ft_resolve_deposit(
         &mut self,
-        sender_id: AccountId,
-        receiver_id: AccountId,
+        owner_id: AccountId,
+        contract_id: AccountId,
+        token_source: Option<TokenSource>,
         amount: U128,
     ) -> U128;
 
     fn ft_resolve_burn(
         &mut self,
         owner_id: AccountId,
-        amount: U128,
         contract_id: AccountId,
-        token_dest: TokenDest
+        token_source: Option<TokenSource>,
+        amount: U128,
     ) -> U128;
 }
