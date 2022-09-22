@@ -2,29 +2,33 @@
 /// added in addition to this macro.
 #[macro_export]
 macro_rules! impl_fungible_token_core {
-    ($contract: ident, $token: ident $(, $on_tokens_burned_fn:ident)?) => {
+    ($contract: ident, $token: ident) => {
 
         #[near_bindgen]
         impl FungibleTokenCore for $contract {
+
             #[payable]
-            fn ft_transfer(
+            fn ft_deposit_call(
                 &mut self,
                 receiver_id: AccountId,
+                contract_id: AccountId,
+                token_source: Option<TokenSource>,
                 amount: U128,
-                memo: Option<String>,
-            ) {
-                self.$token.ft_transfer(receiver_id, amount, memo)
+                msg: String,
+            ) -> PromiseOrValue<U128> {
+                self.$token.ft_deposit_call(receiver_id, contract_id, token_source, amount, msg)
             }
 
             #[payable]
-            fn ft_transfer_call(
+            fn ft_burn_call(
                 &mut self,
                 receiver_id: AccountId,
+                contract_id: AccountId,
+                token_source: Option<TokenSource>,
                 amount: U128,
-                memo: Option<String>,
                 msg: String,
             ) -> PromiseOrValue<U128> {
-                self.$token.ft_transfer_call(receiver_id, amount, memo, msg)
+                self.$token.ft_burn_call(receiver_id, contract_id, token_source, amount, msg)
             }
 
             fn ft_total_supply(&self, contract_id: Option<AccountId>, token_source: Option<TokenSource>) -> U128 {
@@ -34,16 +38,6 @@ macro_rules! impl_fungible_token_core {
             fn ft_balance_of(&self, account_id: AccountId, contract_id: Option<AccountId>, token_source: Option<TokenSource>) -> U128 {
                 self.$token.ft_balance_of(account_id, contract_id, token_source)
             }
-
-            fn ft_burn_call(
-                &mut self,
-                contract_id: AccountId, 
-                token_dest: TokenDest,
-                amount: U128, 
-                msg: String
-            ) -> PromiseOrValue<U128> {
-                self.$token.ft_burn_call(contract_id, token_dest, amount, msg)
-            }
         }
 
         #[near_bindgen]
@@ -51,22 +45,23 @@ macro_rules! impl_fungible_token_core {
             #[private]
             fn ft_resolve_deposit(
                 &mut self,
-                sender_id: AccountId,
-                receiver_id: AccountId,
+                owner_id: AccountId,
+                contract_id: AccountId,
+                token_source: Option<TokenSource>,
                 amount: U128,
             ) -> U128 {
-                self.$token.ft_resolve_deposit(sender_id, receiver_id, amount).into()
+                self.$token.ft_resolve_deposit(owner_id, contract_id, token_source, amount)
             }
 
             #[private]
             fn ft_resolve_burn(
                 &mut self,
-                owner_id: AccountId, 
-                amount: U128, 
+                owner_id: AccountId,
                 contract_id: AccountId,
-                token_dest: TokenDest
+                token_source: Option<TokenSource>,
+                amount: U128,
             ) -> U128 {
-                self.$token.ft_resolve_burn(owner_id, amount, contract_id, token_dest)
+                self.$token.ft_resolve_burn(owner_id, contract_id, token_source, amount)
             }   
         }
     };

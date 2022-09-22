@@ -495,8 +495,8 @@ impl FungibleToken {
             PromiseResult::NotReady => env::abort(),
             PromiseResult::Successful(value) => {
                 if let Ok(unused_amount) = near_sdk::serde_json::from_slice::<U128>(&value) {
-                    if let Some(used_amount) = amount.checked_sub(unused_amount.0) {
-                        used_amount
+                    if let Some(unused_amount) = amount.checked_sub(unused_amount.0) {
+                        amount - unused_amount
                     } else {
                         amount
                     }
@@ -508,7 +508,7 @@ impl FungibleToken {
         };
 
         if used_amount > 0 {
-            self.wrapped_withdraw(owner_id, used_amount, &contract_id, &token_source);
+            let contract_ids = self.wrapped_withdraw(owner_id, used_amount, &contract_id, &token_source);
             return used_amount;
         }
         0
