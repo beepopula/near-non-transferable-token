@@ -37,7 +37,6 @@ pub trait FungibleTokenReceiver {
         contract_id: AccountId,
         token_source: Option<TokenSource>,
         amount: U128,
-        msg: String,
     ) -> PromiseOrValue<U128>;
 
     fn ft_on_burn(

@@ -6,6 +6,7 @@ pub trait FungibleTokenResolver {
     fn ft_resolve_deposit(
         &mut self,
         owner_id: AccountId,
+        receiver_id: AccountId,
         contract_id: AccountId,
         token_source: Option<TokenSource>,
         amount: U128,

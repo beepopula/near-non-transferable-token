@@ -22,7 +22,7 @@ pub trait FungibleTokenAccount {
 
     fn contract_deposit(&mut self, contract_id: &AccountId, deposit_contract_id: &AccountId, token_source: &TokenSource, amount: Balance);
 
-    fn contract_withdraw(&mut self, contract_id: &AccountId, deposit_contract_id: &Option<AccountId>, token_source: &TokenSource, amount: Balance) -> Vec<(AccountId, u128)>;
+    fn contract_withdraw(&mut self, contract_id: &AccountId, deposit_contract_id: &Option<AccountId>, token_source: &TokenSource, amount: Balance) -> Vec<(AccountId, TokenSource, u128)>;
 
     fn get_balance(&self, contract_id: &Option<AccountId>, token_source: &Option<TokenSource>) -> u128;
 
@@ -85,7 +85,7 @@ pub trait FungibleTokenCore {
         contract_id: AccountId,
         token_source: Option<TokenSource>,
         amount: U128,
-        msg: String,
+        msg: String
     ) -> PromiseOrValue<U128>;
 
     /// Returns the total supply of the token in a decimal string representation.

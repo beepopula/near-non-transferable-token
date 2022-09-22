@@ -92,7 +92,7 @@ impl FungibleTokenAccount for Account {
         self.deposit_map.insert(contract_id, &contract);
     }
 
-    fn contract_withdraw(&mut self, contract_id: &AccountId, deposit_contract_id: &Option<AccountId>, token_source: &TokenSource, amount: Balance) -> Vec<(AccountId, u128)> {
+    fn contract_withdraw(&mut self, contract_id: &AccountId, deposit_contract_id: &Option<AccountId>, token_source: &TokenSource, amount: Balance) -> Vec<(AccountId, TokenSource, u128)> {
         let mut contract = self.deposit_map.get(contract_id).unwrap_or(HashMap::new());
         match deposit_contract_id {
             Some(deposit_contract_id) => {
@@ -107,7 +107,7 @@ impl FungibleTokenAccount for Account {
                     contract.insert(contract_id, token_map.clone());
                 }
                 self.deposit_map.insert(contract_id, &contract);
-                vec![(deposit_contract_id.clone(), amount)]
+                vec![(deposit_contract_id.clone(), token_source.clone(), amount)]
             },
             None => {
                 let withdraw_contract_ids = vec![];
@@ -274,7 +274,7 @@ impl FungibleToken {
         }
     }
 
-    pub fn wrapped_withdraw(&mut self, account_id: &AccountId, amount: Balance, contract_id: &AccountId, token_source: &Option<TokenSource>) -> Vec<(AccountId, u128)> {
+    pub fn wrapped_withdraw(&mut self, account_id: &AccountId, amount: Balance, contract_id: &AccountId, token_source: &Option<TokenSource>) -> Vec<(AccountId, TokenSource, u128)> {
         let mut account = self.accounts.get(&account_id).expect(format!("The account {} is not registered", &account_id.to_string()).as_str());
         let balance = account.get_balance(&Some(contract_id.clone()), token_source);
         if let Some(new_balance) = balance.checked_sub(amount) {
@@ -282,7 +282,7 @@ impl FungibleToken {
             return Vec::new()
         } else {
             let deposit_balance = account.get_deposit_balance(contract_id, token_source);
-            if let Some(new_deposit_balance) = balance.checked_sub(balance) {
+            if let Some(new_deposit_balance) = deposit_balance.checked_sub(amount - balance) {
                 self.contract_withdraw(account_id, amount - balance, contract_id, &None, token_source)
             } else {
                 panic!("not enough balance");
@@ -332,7 +332,7 @@ impl FungibleToken {
 
     
 
-    fn contract_withdraw(&mut self, account_id: &AccountId, amount: Balance, contract_id: &AccountId, deposit_contract_id: &Option<AccountId>, token_source: &Option<TokenSource>) -> Vec<(AccountId, u128)> {
+    fn contract_withdraw(&mut self, account_id: &AccountId, amount: Balance, contract_id: &AccountId, deposit_contract_id: &Option<AccountId>, token_source: &Option<TokenSource>) -> Vec<(AccountId, TokenSource, u128)> {
         let mut account = self.accounts.get(&account_id).expect(format!("The account {} is not registered", &account_id.to_string()).as_str());
         let mut used_amount = (0, 0);
         let mut total_withdraw = vec![];
@@ -400,7 +400,7 @@ impl FungibleTokenCore for FungibleToken {
         .then(
             ext_ft_resolver::ext(env::current_account_id())
                 .with_static_gas(GAS_FOR_RESOLVE_BURN)
-                .ft_resolve_deposit(sender_id, contract_id, token_source, amount),
+                .ft_resolve_deposit(sender_id, receiver_id, contract_id, token_source, amount),
         )
         .into()
     }
@@ -509,6 +509,11 @@ impl FungibleToken {
 
         if used_amount > 0 {
             let contract_ids = self.wrapped_withdraw(owner_id, used_amount, &contract_id, &token_source);
+            for (contract_id, token_source, withdraw_amount) in contract_ids {
+                ext_ft_receiver::ext(contract_id.clone())
+                .with_unused_gas_weight(1)
+                .ft_on_withdraw(owner_id.clone(), contract_id, Some(token_source), withdraw_amount.into());
+            }
             return used_amount;
         }
         0
@@ -519,11 +524,12 @@ impl FungibleTokenResolver for FungibleToken {
     fn ft_resolve_deposit(
         &mut self,
         owner_id: AccountId,
+        receiver_id: AccountId,
         contract_id: AccountId,
         token_source: Option<TokenSource>,
         amount: U128,
     ) -> U128 {
-        unreachable!()
+        self.internal_ft_resolve_deposit(&owner_id, &receiver_id, &contract_id, token_source, amount.0).into()
     }
 
     fn ft_resolve_burn(
