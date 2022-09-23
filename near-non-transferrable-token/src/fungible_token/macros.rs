@@ -46,11 +46,12 @@ macro_rules! impl_fungible_token_core {
             fn ft_resolve_deposit(
                 &mut self,
                 owner_id: AccountId,
+                receiver_id: AccountId,
                 contract_id: AccountId,
                 token_source: Option<TokenSource>,
                 amount: U128,
             ) -> U128 {
-                self.$token.ft_resolve_deposit(owner_id, contract_id, token_source, amount)
+                self.$token.ft_resolve_deposit(owner_id, receiver_id, contract_id, token_source, amount)
             }
 
             #[private]

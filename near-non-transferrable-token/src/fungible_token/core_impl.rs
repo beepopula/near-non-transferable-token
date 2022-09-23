@@ -277,18 +277,20 @@ impl FungibleToken {
     pub fn wrapped_withdraw(&mut self, account_id: &AccountId, amount: Balance, contract_id: &AccountId, token_source: &Option<TokenSource>) -> Vec<(AccountId, TokenSource, u128)> {
         let mut account = self.accounts.get(&account_id).expect(format!("The account {} is not registered", &account_id.to_string()).as_str());
         let balance = account.get_balance(&Some(contract_id.clone()), token_source);
+        let mut deposit_contract_ids = vec![];
         if let Some(new_balance) = balance.checked_sub(amount) {
             self.withdraw(account_id, amount, contract_id, token_source);
-            return Vec::new()
         } else {
             let deposit_balance = account.get_deposit_balance(contract_id, token_source);
             if let Some(new_deposit_balance) = deposit_balance.checked_sub(amount - balance) {
-                self.contract_withdraw(account_id, amount - balance, contract_id, &None, token_source)
+                deposit_contract_ids = self.contract_withdraw(account_id, amount - balance, contract_id, &None, token_source)
             } else {
                 panic!("not enough balance");
             }
             
         }
+        self.accounts.insert(account_id, &account);
+        deposit_contract_ids
     }
 
 
