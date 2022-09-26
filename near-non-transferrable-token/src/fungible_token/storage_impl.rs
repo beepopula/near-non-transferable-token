@@ -2,8 +2,9 @@ use crate::storage_management::{StorageBalance, StorageBalanceBounds, StorageMan
 use near_sdk::json_types::U128;
 use near_sdk::{assert_one_yocto, env, log, AccountId, Balance, Promise};
 
-use super::core::{FungibleTokenAccount, TokenSource};
-use super::core_impl::FungibleToken;
+use crate::fungible_token::core::TokenSource;
+use crate::fungible_token::core_impl::FungibleToken;
+use crate::fungible_token::account::FungibleTokenAccount;
 
 impl FungibleToken {
     /// Internal method that returns the Account ID and the balance in case the account was
