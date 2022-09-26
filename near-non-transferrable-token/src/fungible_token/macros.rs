@@ -7,6 +7,17 @@ macro_rules! impl_fungible_token_core {
         #[near_bindgen]
         impl FungibleTokenCore for $contract {
 
+            fn ft_total_supply(&self, contract_id: Option<AccountId>, token_source: Option<TokenSource>) -> U128 {
+                self.$token.ft_total_supply(contract_id, token_source)
+            }
+
+            fn ft_balance_of(&self, account_id: AccountId, contract_id: Option<AccountId>, token_source: Option<TokenSource>) -> U128 {
+                self.$token.ft_balance_of(account_id, contract_id, token_source)
+            }
+        }
+
+        #[near_bindgen]
+        impl FungibleTokenSender for $contract {
             #[payable]
             fn ft_deposit_call(
                 &mut self,
@@ -29,14 +40,6 @@ macro_rules! impl_fungible_token_core {
                 msg: String,
             ) -> PromiseOrValue<U128> {
                 self.$token.ft_burn_call(receiver_id, contract_id, token_source, amount, msg)
-            }
-
-            fn ft_total_supply(&self, contract_id: Option<AccountId>, token_source: Option<TokenSource>) -> U128 {
-                self.$token.ft_total_supply(contract_id, token_source)
-            }
-
-            fn ft_balance_of(&self, account_id: AccountId, contract_id: Option<AccountId>, token_source: Option<TokenSource>) -> U128 {
-                self.$token.ft_balance_of(account_id, contract_id, token_source)
             }
         }
 

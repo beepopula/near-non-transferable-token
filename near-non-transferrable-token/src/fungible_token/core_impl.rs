@@ -338,10 +338,10 @@ impl FungibleToken {
                     self.total_supply.withdraw(contract_id, &TokenSource::FinancialValue, amount);
                 } else {
                     account.withdraw(contract_id, &TokenSource::FinancialValue, financial_balance);
-                    self.total_supply.withdraw(contract_id, &TokenSource::FinancialValue, amount);
+                    self.total_supply.withdraw(contract_id, &TokenSource::FinancialValue, financial_balance);
                     if let Some(new_application_balance) = application_balance.checked_sub(amount - financial_balance) {
-                        account.withdraw(contract_id, &TokenSource::ApplicationValue, new_application_balance);
-                        self.total_supply.withdraw(contract_id, &TokenSource::ApplicationValue, amount);
+                        account.withdraw(contract_id, &TokenSource::ApplicationValue, amount - financial_balance);
+                        self.total_supply.withdraw(contract_id, &TokenSource::ApplicationValue, amount - financial_balance);
                     }
                 }
             }
