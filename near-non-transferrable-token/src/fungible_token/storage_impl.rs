@@ -16,29 +16,46 @@ impl FungibleToken {
         assert_one_yocto();
         let account_id = env::predecessor_account_id();
         let force = force.unwrap_or(false);
-        let account = self.accounts.get(&account_id).expect(format!("The account {} is not registered", &account_id.to_string()).as_str());
-        let balance = account.get_balance(&None, &None);
-        if balance > 0 && force{
-            for (contract_id, token_map) in account.contract_ids.iter() {
-                if let Some(contract_id) = contract_id {
-                    let total = self.total_supply.get_balance(&Some(contract_id.clone()), &None);
-                    self.total_supply.withdraw(&contract_id, &TokenSource::ApplicationValue, total);
+        let mut account = self.accounts.get(&account_id).expect(format!("The account {} is not registered", &account_id.to_string()).as_str());
+        let balance = account.get_available_balance(&None, &None);
+        let deposit_balance = account.get_deposit_balance(&None, &None, &None);
+        if balance > 0 {
+            if force {
+                for (contract_id, token_map) in account.contract_ids.iter() {
+                    if let Some(contract_id) = contract_id {
+                        for (token_source, amount) in token_map {
+                            self.total_supply.withdraw(&contract_id, &token_source, amount); 
+                        }
+                    }
                 }
+            } else {
+                env::panic_str(
+                    "Can't unregister the account with the positive balance without force",
+                )
             }
-        } else {
+        }
+        
+        if deposit_balance > 0 {
             env::panic_str(
                 "Can't unregister the account with the positive balance without force",
             )
         }
-
+        account.contract_ids.clear();
+        account.deposit_map.clear();
         self.accounts.remove(&account_id);
         Promise::new(account_id.clone()).transfer(self.storage_balance_bounds().min.0 + 1);
         Some((account_id, balance))
     }
 
-    fn internal_storage_balance_of(&self, account_id: &AccountId) -> Option<StorageBalance> {
+    fn internal_storage_balance_of(&self, account_id: &AccountId, include_deposit_contracts: bool) -> Option<StorageBalance> {
         if self.accounts.contains_key(account_id) {
-            Some(StorageBalance { total: self.storage_balance_bounds().min, available: 0.into() })
+            let account = self.accounts.get(&account_id).unwrap();
+            let mut contract_count = account.contract_ids.len() - 1;
+            if include_deposit_contracts {
+                contract_count += account.deposit_map.len();
+            }
+            let total = contract_count as u128 * self.storage_balance_bounds().min.0;
+            Some(StorageBalance { total: total.into(), available: 0.into() })
         } else {
             None
         }
@@ -72,7 +89,7 @@ impl StorageManagement for FungibleToken {
                 Promise::new(env::predecessor_account_id()).transfer(refund);
             }
         }
-        self.internal_storage_balance_of(&account_id).unwrap()
+        self.internal_storage_balance_of(&account_id, false).unwrap()
     }
 
     /// While storage_withdraw normally allows the caller to retrieve `available` balance, the basic
@@ -84,7 +101,7 @@ impl StorageManagement for FungibleToken {
     fn storage_withdraw(&mut self, amount: Option<U128>) -> StorageBalance {
         assert_one_yocto();
         let predecessor_account_id = env::predecessor_account_id();
-        if let Some(storage_balance) = self.internal_storage_balance_of(&predecessor_account_id) {
+        if let Some(storage_balance) = self.internal_storage_balance_of(&predecessor_account_id, true) {
             match amount {
                 Some(amount) if amount.0 > 0 => {
                     env::panic_str("The amount is greater than the available storage balance");
@@ -112,6 +129,6 @@ impl StorageManagement for FungibleToken {
     }
 
     fn storage_balance_of(&self, account_id: AccountId) -> Option<StorageBalance> {
-        self.internal_storage_balance_of(&account_id)
+        self.internal_storage_balance_of(&account_id, true)
     }
 }

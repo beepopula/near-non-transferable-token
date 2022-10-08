@@ -15,6 +15,14 @@ pub trait FungibleTokenSender {
         msg: String,
     ) -> PromiseOrValue<U128>;
 
+    fn ft_withdraw_call(
+        &mut self,
+        receiver_id: AccountId,
+        contract_id: AccountId,
+        token_source: Option<TokenSource>,
+        amount: U128,
+    ) -> PromiseOrValue<U128>;
+
     fn ft_burn_call(
         &mut self,
         receiver_id: AccountId,
