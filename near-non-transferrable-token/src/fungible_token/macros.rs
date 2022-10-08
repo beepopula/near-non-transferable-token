@@ -31,6 +31,17 @@ macro_rules! impl_fungible_token_core {
             }
 
             #[payable]
+            fn ft_withdraw_call(
+                &mut self,
+                receiver_id: AccountId,
+                contract_id: AccountId,
+                token_source: Option<TokenSource>,
+                amount: U128,
+            ) -> PromiseOrValue<U128> {
+                self.$token.ft_withdraw_call(receiver_id, contract_id, token_source, amount)
+            }
+
+            #[payable]
             fn ft_burn_call(
                 &mut self,
                 receiver_id: AccountId,
@@ -45,18 +56,6 @@ macro_rules! impl_fungible_token_core {
 
         #[near_bindgen]
         impl FungibleTokenResolver for $contract {
-            #[private]
-            fn ft_resolve_deposit(
-                &mut self,
-                owner_id: AccountId,
-                receiver_id: AccountId,
-                contract_id: AccountId,
-                token_source: Option<TokenSource>,
-                amount: U128,
-            ) -> U128 {
-                self.$token.ft_resolve_deposit(owner_id, receiver_id, contract_id, token_source, amount)
-            }
-
             #[private]
             fn ft_resolve_burn(
                 &mut self,
