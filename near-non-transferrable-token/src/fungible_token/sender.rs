@@ -1,7 +1,5 @@
 use near_sdk::{AccountId, json_types::U128, PromiseOrValue};
 
-use crate::fungible_token::core::TokenSource;
-
 
 
 pub trait FungibleTokenSender {
@@ -10,7 +8,6 @@ pub trait FungibleTokenSender {
         &mut self,
         receiver_id: AccountId,
         contract_id: AccountId,
-        token_source: Option<TokenSource>,
         amount: U128,
         msg: String,
     ) -> PromiseOrValue<U128>;
@@ -19,7 +16,6 @@ pub trait FungibleTokenSender {
         &mut self,
         receiver_id: AccountId,
         contract_id: AccountId,
-        token_source: Option<TokenSource>,
         amount: U128,
     ) -> PromiseOrValue<U128>;
 
@@ -27,7 +23,6 @@ pub trait FungibleTokenSender {
         &mut self,
         receiver_id: AccountId,
         contract_id: AccountId,
-        token_source: Option<TokenSource>,
         amount: U128,
         msg: String
     ) -> PromiseOrValue<U128>;

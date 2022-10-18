@@ -2,7 +2,6 @@ use crate::storage_management::{StorageBalance, StorageBalanceBounds, StorageMan
 use near_sdk::json_types::U128;
 use near_sdk::{assert_one_yocto, env, log, AccountId, Balance, Promise};
 
-use crate::fungible_token::core::TokenSource;
 use crate::fungible_token::core_impl::FungibleToken;
 use crate::fungible_token::account::FungibleTokenAccount;
 
@@ -17,15 +16,13 @@ impl FungibleToken {
         let account_id = env::predecessor_account_id();
         let force = force.unwrap_or(false);
         let mut account = self.accounts.get(&account_id).expect(format!("The account {} is not registered", &account_id.to_string()).as_str());
-        let balance = account.get_available_balance(&None, &None);
-        let deposit_balance = account.get_deposit_balance(&None, &None, &None);
+        let balance = account.get_available_balance(&None);
+        let deposit_balance = account.get_deposit_balance(&None, &None);
         if balance > 0 {
             if force {
-                for (contract_id, token_map) in account.contract_ids.iter() {
+                for (contract_id, amount) in account.contract_ids.iter() {
                     if let Some(contract_id) = contract_id {
-                        for (token_source, amount) in token_map {
-                            self.total_supply.withdraw(&contract_id, &token_source, amount); 
-                        }
+                        self.total_supply.withdraw(&contract_id, amount); 
                     }
                 }
             } else {
