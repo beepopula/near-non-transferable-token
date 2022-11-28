@@ -13,19 +13,7 @@
     <a href="https://docs.rs/near-non-transferrable-token"><img src="https://docs.rs/near-non-transferrable-token/badge.svg" alt="Reference Documentation" /></a>
   </p>
 
-   <h3>
-      <a href="https://github.com/near/near-non-transferrable-token-rs#features">Features</a>
-      <span> | </span>
-      <a href="https://github.com/near/near-non-transferrable-token-rs#pre-requisites">Pre-requisites</a>
-      <span> | </span>
-      <a href="https://github.com/near/near-non-transferrable-token-rs#writing-rust-contract">Writing Rust Contract</a>
-      <span> | </span>
-      <a href="https://github.com/near/near-non-transferrable-token-rs#building-rust-contract">Building Rust Contract</a>
-      <span> | </span>
-      <a href="https://docs.rs/near-non-transferrable-token">Reference Documentation</a>
-      <span> | </span>
-      <a href="https://github.com/near/near-non-transferrable-token-rs#contributing">Contributing</a>
-    </h3>
+
 </div>
 
 ## Example
