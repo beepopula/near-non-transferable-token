@@ -6,6 +6,7 @@ version = "0.0.3"
 authors = ["Popula <hi@popula.io>"]
 description = "NEAR smart contracts library.\n"
 homepage = "https://popula.io"
+readme = "README.md"
 categories = ["wasm"]
 license = "GPL-3.0"
 repository = "https://github.com/beepopula/near-non-transferrable-token"
