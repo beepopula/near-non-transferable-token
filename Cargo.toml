@@ -1,6 +1,6 @@
 [workspace]
 members = [
-    "near-non-transferrable-token",
+    "near-non-transferable-token",
 ]
 exclude = []
 

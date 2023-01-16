@@ -1,16 +1,16 @@
 <div align="center">
 
-  <h1><code>near-non-transferrable-token</code></h1>
+  <h1><code>near-non-transferable-token</code></h1>
 
   <p>
-    <strong>Popula Library for Non-transferrable Token.</strong>
+    <strong>Popula Library for Non-transferable Token.</strong>
   </p>
 
 
   <p>
-    <a href="https://crates.io/crates/near-non-transferrable-token"><img src="https://img.shields.io/crates/v/near-non-transferrable-token.svg?style=flat-square" alt="Crates.io version" /></a>
-    <a href="https://crates.io/crates/near-non-transferrable-token"><img src="https://img.shields.io/crates/d/near-non-transferrable-token.svg?style=flat-square" alt="Download" /></a>
-    <a href="https://docs.rs/near-non-transferrable-token"><img src="https://docs.rs/near-non-transferrable-token/badge.svg" alt="Reference Documentation" /></a>
+    <a href="https://crates.io/crates/near-non-transferable-token"><img src="https://img.shields.io/crates/v/near-non-transferable-token.svg?style=flat-square" alt="Crates.io version" /></a>
+    <a href="https://crates.io/crates/near-non-transferable-token"><img src="https://img.shields.io/crates/d/near-non-transferable-token.svg?style=flat-square" alt="Download" /></a>
+    <a href="https://docs.rs/near-non-transferable-token"><img src="https://docs.rs/near-non-transferable-token/badge.svg" alt="Reference Documentation" /></a>
   </p>
 
 
@@ -20,7 +20,7 @@
 
 
 ```rust
-use near_non_transferrable_token::{impl_fungible_token_core, impl_fungible_token_storage};
+use near_non_transferable_token::{impl_fungible_token_core, impl_fungible_token_storage};
 
 #[near_bindgen]
 impl Contract {
@@ -77,7 +77,7 @@ NOTES:
 
 This crate follows [Cargo's semver guidelines](https://doc.rust-lang.org/cargo/reference/semver.html). 
 
-State breaking changes (low-level serialization format of any data type) will be avoided at all costs. If a change like this were to happen, it would come with a major version and come with a compiler error. If you encounter one that does not, [open an issue](https://github.com/near/near-non-transferrable-token-rs/issues/new)!
+State breaking changes (low-level serialization format of any data type) will be avoided at all costs. If a change like this were to happen, it would come with a major version and come with a compiler error. If you encounter one that does not, [open an issue](https://github.com/near/near-non-transferable-token-rs/issues/new)!
 
 ### MSRV
 
