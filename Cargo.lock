@@ -548,7 +548,7 @@ dependencies = [
 
 [[package]]
 name = "near-non-transferable-token"
-version = "0.0.4"
+version = "0.0.5"
 dependencies = [
  "near-sdk",
  "serde",
