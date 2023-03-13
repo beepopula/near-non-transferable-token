@@ -34,6 +34,7 @@ pub trait FungibleTokenReceiver {
         owner_id: AccountId,
         contract_id: AccountId,
         amount: U128,
+        msg: String
     ) -> PromiseOrValue<U128>;
 
     fn ft_on_burn(

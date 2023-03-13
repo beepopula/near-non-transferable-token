@@ -47,8 +47,7 @@ impl FtMint<'_> {
 #[must_use]
 #[derive(Serialize, Debug, Clone)]
 pub struct FtDeposit<'a> {
-    pub old_owner_id: &'a AccountId,
-    pub new_owner_id: &'a AccountId,
+    pub owner_id: &'a AccountId,
     pub amount: &'a U128,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub memo: Option<&'a str>,
@@ -65,6 +64,31 @@ impl FtDeposit<'_> {
     /// where each [`FtDeposit`] represents the data of each transfer.
     pub fn emit_many(data: &[FtDeposit<'_>]) {
         new_141_v1(Nep141EventKind::FtDeposit(data)).emit()
+    }
+}
+
+/// Data to log for an FT withdraw event. To log this event,
+/// call [`.emit()`](FtWithdraw::emit).
+#[must_use]
+#[derive(Serialize, Debug, Clone)]
+pub struct FtWithdraw<'a> {
+    pub owner_id: &'a AccountId,
+    pub amount: &'a U128,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub memo: Option<&'a str>,
+}
+
+impl FtWithdraw<'_> {
+    /// Logs the event to the host. This is required to ensure that the event is triggered
+    /// and to consume the event.
+    pub fn emit(self) {
+        Self::emit_many(&[self])
+    }
+
+    /// Emits an FT transfer event, through [`env::log_str`](near_sdk::env::log_str),
+    /// where each [`FtWithdraw`] represents the data of each transfer.
+    pub fn emit_many(data: &[FtWithdraw<'_>]) {
+        new_141_v1(Nep141EventKind::FtWithdraw(data)).emit()
     }
 }
 
@@ -106,6 +130,7 @@ pub(crate) struct Nep141Event<'a> {
 enum Nep141EventKind<'a> {
     FtMint(&'a [FtMint<'a>]),
     FtDeposit(&'a [FtDeposit<'a>]),
+    FtWithdraw(&'a [FtWithdraw<'a>]),
     FtBurn(&'a [FtBurn<'a>]),
 }
 
@@ -178,38 +203,6 @@ mod tests {
         assert_eq!(
             test_utils::get_logs()[0],
             r#"EVENT_JSON:{"standard":"nep141","version":"1.0.0","event":"ft_burn","data":[{"owner_id":"alice","amount":"200","memo":"has memo"},{"owner_id":"bob","amount":"100"}]}"#
-        );
-    }
-
-    #[test]
-    fn ft_transfer() {
-        let old_owner_id = &bob();
-        let new_owner_id = &alice();
-        let amount = &U128(100);
-        FtDeposit { old_owner_id, new_owner_id, amount, memo: None }.emit();
-        assert_eq!(
-            test_utils::get_logs()[0],
-            r#"EVENT_JSON:{"standard":"nep141","version":"1.0.0","event":"ft_transfer","data":[{"old_owner_id":"bob","new_owner_id":"alice","amount":"100"}]}"#
-        );
-    }
-
-    #[test]
-    fn nft_transfers() {
-        let old_owner_id = &bob();
-        let new_owner_id = &alice();
-        let amount = &U128(100);
-        FtDeposit::emit_many(&[
-            FtDeposit {
-                old_owner_id: &alice(),
-                new_owner_id: &bob(),
-                amount: &U128(200),
-                memo: Some("has memo"),
-            },
-            FtDeposit { old_owner_id, new_owner_id, amount, memo: None },
-        ]);
-        assert_eq!(
-            test_utils::get_logs()[0],
-            r#"EVENT_JSON:{"standard":"nep141","version":"1.0.0","event":"ft_transfer","data":[{"old_owner_id":"alice","new_owner_id":"bob","amount":"200","memo":"has memo"},{"old_owner_id":"bob","new_owner_id":"alice","amount":"100"}]}"#
         );
     }
 }

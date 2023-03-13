@@ -2,7 +2,7 @@ use near_sdk::{AccountId, json_types::U128, PromiseOrValue};
 
 
 
-pub trait FungibleTokenSender {
+pub trait FungibleTokenDeposit {
     
     fn ft_deposit_call(
         &mut self,
@@ -17,6 +17,7 @@ pub trait FungibleTokenSender {
         receiver_id: AccountId,
         contract_id: AccountId,
         amount: U128,
+        msg: String
     ) -> PromiseOrValue<U128>;
 
     fn ft_burn_call(

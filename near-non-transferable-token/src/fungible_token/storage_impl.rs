@@ -3,47 +3,8 @@ use near_sdk::json_types::U128;
 use near_sdk::{assert_one_yocto, env, log, AccountId, Balance, Promise};
 
 use crate::fungible_token::core_impl::FungibleToken;
-use crate::fungible_token::account::FungibleTokenAccount;
 
 impl FungibleToken {
-    /// Internal method that returns the Account ID and the balance in case the account was
-    /// unregistered.
-    pub fn internal_storage_unregister(
-        &mut self,
-        force: Option<bool>,
-    ) -> Option<(AccountId, Balance)> {
-        assert_one_yocto();
-        let account_id = env::predecessor_account_id();
-        let force = force.unwrap_or(false);
-        let mut account = self.accounts.get(&account_id).expect(format!("The account {} is not registered", &account_id.to_string()).as_str());
-        let balance = account.get_available_balance(&None);
-        let deposit_balance = account.get_deposit_balance(&None, &None);
-        if balance > 0 {
-            if force {
-                for (contract_id, amount) in account.contract_ids.iter() {
-                    if let Some(contract_id) = contract_id {
-                        self.total_supply.withdraw(&contract_id, amount); 
-                    }
-                }
-            } else {
-                env::panic_str(
-                    "Can't unregister the account with the positive balance without force",
-                )
-            }
-        }
-        
-        if deposit_balance > 0 {
-            env::panic_str(
-                "Can't unregister the account with the positive balance without force",
-            )
-        }
-        account.contract_ids.clear();
-        account.deposit_map.clear();
-        self.accounts.remove(&account_id);
-        Promise::new(account_id.clone()).transfer(self.storage_balance_bounds().min.0 + 1);
-        Some((account_id, balance))
-    }
-
     fn internal_storage_balance_of(&self, account_id: &AccountId, include_deposit_contracts: bool) -> Option<StorageBalance> {
         if self.accounts.contains_key(account_id) {
             let account = self.accounts.get(&account_id).unwrap();
@@ -113,7 +74,7 @@ impl StorageManagement for FungibleToken {
     }
 
     fn storage_unregister(&mut self, force: Option<bool>) -> bool {
-        self.internal_storage_unregister(force).is_some()
+        panic!("not implemented")
     }
 
     fn storage_balance_bounds(&self) -> StorageBalanceBounds {
