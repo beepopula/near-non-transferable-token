@@ -74,7 +74,7 @@ impl StorageManagement for FungibleToken {
     }
 
     fn storage_unregister(&mut self, force: Option<bool>) -> bool {
-        panic!("not implemented")
+        false
     }
 
     fn storage_balance_bounds(&self) -> StorageBalanceBounds {

@@ -2,7 +2,7 @@
 [package]
 edition = "2018"
 name = "near-non-transferable-token"
-version = "0.0.5"
+version = "0.0.6"
 authors = ["Popula <hi@popula.io>"]
 description = "NEAR smart contracts library.\n"
 homepage = "https://popula.io"
@@ -15,7 +15,7 @@ repository = "https://github.com/beepopula/near-non-transferable-token"
 crate-type = ["cdylib", "rlib"]
 
 [dependencies.near-sdk]
-version = "=4.1.0-pre.3"
+version = "^4.1.0-pre.3"
 
 [dependencies.serde]
 version = "1"

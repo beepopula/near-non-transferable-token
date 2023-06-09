@@ -7,6 +7,10 @@ macro_rules! impl_fungible_token_core {
         #[near_bindgen]
         impl FungibleTokenCore for $contract {
 
+            fn ft_available_supply(&self, contract_id: Option<AccountId>) -> U128 {
+                self.$token.ft_available_supply(contract_id)
+            }
+
             fn ft_total_supply(&self, contract_id: Option<AccountId>) -> U128 {
                 self.$token.ft_total_supply(contract_id)
             }
@@ -14,10 +18,11 @@ macro_rules! impl_fungible_token_core {
             fn ft_balance_of(&self, account_id: AccountId, contract_id: Option<AccountId>) -> U128 {
                 self.$token.ft_balance_of(account_id, contract_id)
             }
-        }
 
-        #[near_bindgen]
-        impl FungibleTokenSender for $contract {
+            fn ft_total_balance_of(&self, account_id: AccountId, contract_id: Option<AccountId>) -> U128 {
+                self.$token.ft_total_balance_of(account_id, contract_id)
+            }
+
             #[payable]
             fn ft_deposit_call(
                 &mut self,
@@ -35,8 +40,9 @@ macro_rules! impl_fungible_token_core {
                 receiver_id: AccountId,
                 contract_id: AccountId,
                 amount: U128,
+                msg: String,
             ) -> PromiseOrValue<U128> {
-                self.$token.ft_withdraw_call(receiver_id, contract_id, amount)
+                self.$token.ft_withdraw_call(receiver_id, contract_id, amount, msg)
             }
 
             #[payable]
@@ -53,6 +59,29 @@ macro_rules! impl_fungible_token_core {
 
         #[near_bindgen]
         impl FungibleTokenResolver for $contract {
+
+            #[private]
+            fn ft_resolve_deposit(
+                &mut self,
+                owner_id: AccountId,
+                receiver_id: AccountId,
+                contract_id: AccountId,
+                amount: U128,
+            ) -> U128 {
+                self.$token.ft_resolve_deposit(owner_id, receiver_id, contract_id, amount)
+            }   
+            
+            #[private]
+            fn ft_resolve_withdraw(
+                &mut self,
+                owner_id: AccountId,
+                receiver_id: AccountId,
+                contract_id: AccountId,
+                amount: U128,
+            ) -> U128 {
+                self.$token.ft_resolve_withdraw(owner_id, receiver_id, contract_id, amount)
+            }   
+
             #[private]
             fn ft_resolve_burn(
                 &mut self,
@@ -91,15 +120,8 @@ macro_rules! impl_fungible_token_storage {
                 self.$token.storage_withdraw(amount)
             }
 
-            #[payable]
             fn storage_unregister(&mut self, force: Option<bool>) -> bool {
-                #[allow(unused_variables)]
-                if let Some((account_id, balance)) = self.$token.internal_storage_unregister(force) {
-                    $(self.$on_account_closed_fn(account_id, balance);)?
-                    true
-                } else {
-                    false
-                }
+                self.$token.storage_unregister(force)
             }
 
             fn storage_balance_bounds(&self) -> StorageBalanceBounds {

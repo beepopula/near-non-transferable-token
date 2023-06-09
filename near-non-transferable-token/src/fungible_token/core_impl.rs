@@ -19,8 +19,6 @@ use crate::fungible_token::core::FungibleTokenCore;
 use crate::fungible_token::resolver::{FungibleTokenResolver, ext_ft_resolver};
 use crate::fungible_token::account::FungibleTokenAccount;
 
-use super::sender::FungibleTokenDeposit;
-
 
 const GAS_FOR_RESOLVE_BURN: Gas = Gas(5_000_000_000_000);
 const GAS_FOR_FT_BURN_CALL: Gas = Gas(25_000_000_000_000 + GAS_FOR_RESOLVE_BURN.0);
@@ -72,18 +70,16 @@ impl FungibleTokenAccount for Account {
             } else {
                 env::panic_str("Not enough balance");
             }
-            
         }
         amount
     }
 
     fn contract_deposit(&mut self, contract_id: &AccountId, deposit_contract_id: &AccountId, amount: Balance) {
         let mut contract = self.deposit_map.get(contract_id).unwrap_or(HashMap::new());
-        self.withdraw(contract_id, amount);
         for contract_id  in [Some(deposit_contract_id.clone()), None] {
             let balance = contract.get(&contract_id).unwrap_or(&0).clone();
             if let Some(new_balance) = balance.checked_add(amount) {
-                contract.insert(contract_id, new_balance);
+                contract.insert(contract_id.clone(), new_balance);
             } else {
                 env::panic_str("Balance overflow");
             }
@@ -103,7 +99,6 @@ impl FungibleTokenAccount for Account {
             
         }
         self.deposit_map.insert(contract_id, &contract);
-        self.deposit(contract_id, amount);
     }
 
     fn get_available_balance(&self, contract_id: &Option<AccountId>) -> u128 {
@@ -243,13 +238,16 @@ impl FungibleToken {
         let mut account = self.accounts.get(&account_id).expect(format!("The account {} is not registered", &account_id.to_string()).as_str());
         let balance = account.get_available_balance(&Some(contract_id.clone()));
         assert!(balance >= amount, "not enough balance");
+        account.withdraw(contract_id, amount);
         account.contract_deposit(contract_id, deposit_contract_id, amount);
+        self.accounts.insert(account_id, &account);
 
         FtDeposit {
             owner_id: account_id,
             amount: &amount.into(),
             memo: Some(&json!({
-                "contract_id": contract_id
+                "contract_id": contract_id,
+                "deposit_contract_id": deposit_contract_id
             }).to_string()),
         }
         .emit();
@@ -260,13 +258,15 @@ impl FungibleToken {
         let deposit_balance = account.get_deposit_balance(&Some(contract_id.clone()), &Some(deposit_contract_id.clone()));
         assert!(deposit_balance >= amount, "not enough balance");
         account.contract_withdraw(contract_id, deposit_contract_id, amount);
+        account.deposit(contract_id, amount);
         self.accounts.insert(account_id, &account);
 
         FtWithdraw {
             owner_id: account_id,
             amount: &amount.into(),
             memo: Some(&json!({
-                "contract_id": contract_id
+                "contract_id": contract_id,
+                "deposit_contract_id": deposit_contract_id
             }).to_string()),
         }
         .emit();
@@ -284,7 +284,7 @@ impl FungibleToken {
 impl FungibleTokenCore for FungibleToken {
 
     fn ft_available_supply(&self, contract_id: Option<AccountId>) -> U128 {
-        self.total_supply.get_total_balance(&contract_id).into()
+        self.total_supply.get_available_balance(&contract_id).into()
     }
 
     fn ft_total_supply(&self, contract_id: Option<AccountId>) -> U128 {
@@ -304,9 +304,6 @@ impl FungibleTokenCore for FungibleToken {
             None => 0.into()
         }
     }
-}
-
-impl FungibleTokenDeposit for FungibleToken {
 
     fn ft_deposit_call(
         &mut self,
@@ -322,8 +319,6 @@ impl FungibleTokenDeposit for FungibleToken {
 
         let account = self.accounts.get(&sender_id).expect(format!("The account {} is not registered", &sender_id.to_string()).as_str());
         assert!(account.get_available_balance(&Some(contract_id.clone())) >= amount.0, "not enough balance");
-
-        self.internal_contract_deposit(&sender_id, amount.0, &contract_id, &receiver_id);
 
         ext_ft_receiver::ext(receiver_id.clone())
         .with_static_gas(env::prepaid_gas() - GAS_FOR_FT_DEPOSIT_CALL)
@@ -374,7 +369,7 @@ impl FungibleTokenDeposit for FungibleToken {
         require!(env::prepaid_gas() > GAS_FOR_FT_BURN_CALL, "More gas is required");
         let sender_id = env::predecessor_account_id();
         let account = self.accounts.get(&sender_id).expect(format!("The account {} is not registered", &sender_id.to_string()).as_str());
-        assert!(account.get_total_balance(&Some(contract_id.clone())) >= amount.0, "not enough balance");
+        assert!(account.get_available_balance(&Some(contract_id.clone())) >= amount.0, "not enough balance");
 
         ext_ft_receiver::ext(receiver_id.clone())
         .with_static_gas(env::prepaid_gas() - GAS_FOR_FT_BURN_CALL)

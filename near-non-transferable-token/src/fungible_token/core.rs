@@ -20,4 +20,29 @@ pub trait FungibleTokenCore {
     fn ft_balance_of(&self, account_id: AccountId, contract_id: Option<AccountId>) -> U128;
 
     fn ft_total_balance_of(&self, account_id: AccountId, contract_id: Option<AccountId>) -> U128;
+
+        
+    fn ft_deposit_call(
+        &mut self,
+        receiver_id: AccountId,
+        contract_id: AccountId,
+        amount: U128,
+        msg: String,
+    ) -> PromiseOrValue<U128>;
+
+    fn ft_withdraw_call(
+        &mut self,
+        receiver_id: AccountId,
+        contract_id: AccountId,
+        amount: U128,
+        msg: String
+    ) -> PromiseOrValue<U128>;
+
+    fn ft_burn_call(
+        &mut self,
+        receiver_id: AccountId,
+        contract_id: AccountId,
+        amount: U128,
+        msg: String
+    ) -> PromiseOrValue<U128>;
 }
