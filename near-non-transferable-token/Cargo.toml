@@ -2,7 +2,7 @@
 [package]
 edition = "2018"
 name = "near-non-transferable-token"
-version = "0.0.7"
+version = "0.0.8"
 authors = ["Popula <hi@popula.io>"]
 description = "NEAR smart contracts library.\n"
 homepage = "https://popula.io"
