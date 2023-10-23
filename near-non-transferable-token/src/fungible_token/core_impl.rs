@@ -205,15 +205,6 @@ impl FungibleToken {
         account.deposit(contract_id, amount);
         self.accounts.insert(account_id, &account);
         self.total_supply.deposit(contract_id, amount);
-
-        FtMint {
-            owner_id: account_id,
-            amount: &amount.into(),
-            memo: Some(&json!({
-                "contract_id": contract_id
-            }).to_string()),
-        }
-        .emit();
     }
 
     pub fn internal_withdraw(&mut self, account_id: &AccountId, amount: Balance, contract_id: &AccountId) {
@@ -223,15 +214,6 @@ impl FungibleToken {
         account.withdraw(contract_id, amount);
         self.total_supply.withdraw(contract_id, amount);
         self.accounts.insert(account_id, &account);
-
-        FtBurn {
-            owner_id: account_id,
-            amount: &amount.into(),
-            memo: Some(&json!({
-                "contract_id": contract_id
-            }).to_string()),
-        }
-        .emit();
     }
 
     pub fn internal_contract_deposit(&mut self, account_id: &AccountId, amount: Balance, contract_id: &AccountId, deposit_contract_id: &AccountId) {
@@ -242,15 +224,6 @@ impl FungibleToken {
         account.contract_deposit(contract_id, deposit_contract_id, amount);
         self.accounts.insert(account_id, &account);
 
-        FtDeposit {
-            owner_id: account_id,
-            amount: &amount.into(),
-            memo: Some(&json!({
-                "contract_id": contract_id,
-                "deposit_contract_id": deposit_contract_id
-            }).to_string()),
-        }
-        .emit();
     }
 
     pub fn internal_contract_withdraw(&mut self, account_id: &AccountId, amount: Balance, contract_id: &AccountId, deposit_contract_id: &AccountId) {
@@ -260,16 +233,6 @@ impl FungibleToken {
         account.contract_withdraw(contract_id, deposit_contract_id, amount);
         account.deposit(contract_id, amount);
         self.accounts.insert(account_id, &account);
-
-        FtWithdraw {
-            owner_id: account_id,
-            amount: &amount.into(),
-            memo: Some(&json!({
-                "contract_id": contract_id,
-                "deposit_contract_id": deposit_contract_id
-            }).to_string()),
-        }
-        .emit();
     }
 
 
@@ -312,17 +275,14 @@ impl FungibleTokenCore for FungibleToken {
         amount: U128,
         msg: String,
     ) -> PromiseOrValue<U128> {
-        assert!(env::attached_deposit() >= 1, "not enough deposit");
+        assert_one_yocto();
         require!(env::prepaid_gas() > GAS_FOR_FT_DEPOSIT_CALL, "More gas is required");
 
         let sender_id = env::predecessor_account_id();
-
-        let account = self.accounts.get(&sender_id).expect(format!("The account {} is not registered", &sender_id.to_string()).as_str());
-        assert!(account.get_available_balance(&Some(contract_id.clone())) >= amount.0, "not enough balance");
+        self.internal_contract_deposit(&sender_id, amount.into(), &contract_id, &receiver_id);
 
         ext_ft_receiver::ext(receiver_id.clone())
         .with_static_gas(env::prepaid_gas() - GAS_FOR_FT_DEPOSIT_CALL)
-        .with_attached_deposit(env::attached_deposit())
         .ft_on_deposit(sender_id.clone(), contract_id.clone(), amount.into(), msg)
         .then(
             ext_ft_resolver::ext(env::current_account_id())
@@ -343,12 +303,10 @@ impl FungibleTokenCore for FungibleToken {
         require!(env::prepaid_gas() > GAS_FOR_FT_WITHDRAW_CALL, "More gas is required");
 
         let sender_id = env::predecessor_account_id();
-        let account = self.accounts.get(&sender_id).expect(format!("The account {} is not registered", &sender_id.to_string()).as_str());
-        assert!(account.get_deposit_balance(&Some(contract_id.clone()), &Some(receiver_id.clone())) >= amount.0, "not enough balance");
+        self.internal_contract_withdraw(&sender_id, amount.0, &contract_id, &receiver_id);
 
         ext_ft_receiver::ext(receiver_id.clone())
         .with_static_gas(env::prepaid_gas() - GAS_FOR_FT_WITHDRAW_CALL)
-        .with_attached_deposit(env::attached_deposit())
         .ft_on_withdraw(sender_id.clone(), contract_id.clone(), amount.into(), msg)
         .then(
             ext_ft_resolver::ext(env::current_account_id())
@@ -365,15 +323,13 @@ impl FungibleTokenCore for FungibleToken {
         amount: U128,
         msg: String,
     ) -> PromiseOrValue<U128> {
-        assert!(env::attached_deposit() >= 1, "not enough deposit");
+        assert_one_yocto();
         require!(env::prepaid_gas() > GAS_FOR_FT_BURN_CALL, "More gas is required");
         let sender_id = env::predecessor_account_id();
-        let account = self.accounts.get(&sender_id).expect(format!("The account {} is not registered", &sender_id.to_string()).as_str());
-        assert!(account.get_available_balance(&Some(contract_id.clone())) >= amount.0, "not enough balance");
+        self.internal_withdraw(&sender_id, amount.into(), &contract_id);
 
         ext_ft_receiver::ext(receiver_id.clone())
         .with_static_gas(env::prepaid_gas() - GAS_FOR_FT_BURN_CALL)
-        .with_attached_deposit(env::attached_deposit())
         .ft_on_burn(sender_id.clone(), contract_id.clone(), amount.into(), msg)
         .then(
             ext_ft_resolver::ext(env::current_account_id())
@@ -386,21 +342,17 @@ impl FungibleTokenCore for FungibleToken {
 
 impl FungibleToken {
 
-    fn get_used_amount(&mut self, amount: u128) -> u128 {
+    fn get_unused_amount(&mut self, amount: u128) -> u128 {
         let used_amount: Balance = match env::promise_result(0) {
             PromiseResult::NotReady => env::abort(),
             PromiseResult::Successful(value) => {
                 if let Ok(unused_amount) = near_sdk::serde_json::from_slice::<U128>(&value) {
-                    if let Some(used_amount) = amount.checked_sub(unused_amount.0) {
-                        used_amount
-                    } else {
-                        amount
-                    }
+                    unused_amount.into()
                 } else {
-                    0
+                    amount
                 }
             }
-            PromiseResult::Failed => 0,
+            PromiseResult::Failed => amount,
         };
         used_amount
     }
@@ -412,11 +364,21 @@ impl FungibleToken {
         contract_id: &AccountId,
         amount: u128,
     ) -> (u128, u128) {
-        let used_amount: Balance = self.get_used_amount(amount);
-        if used_amount > 0 {
-            self.internal_contract_deposit(owner_id, used_amount, contract_id, receiver_id);
-            return (amount, used_amount)
+        let unused_amount: Balance = self.get_unused_amount(amount);
+        if unused_amount > 0 {
+            self.internal_contract_withdraw(owner_id, unused_amount, contract_id, receiver_id);
+            return (amount, unused_amount)
         }
+
+        FtDeposit {
+            owner_id: owner_id,
+            amount: &(amount - unused_amount).into(),
+            memo: Some(&json!({
+                "contract_id": contract_id,
+                "deposit_contract_id": receiver_id
+            }).to_string()),
+        }
+        .emit();
         (amount, 0)
     }
 
@@ -427,13 +389,24 @@ impl FungibleToken {
         contract_id: &AccountId,
         amount: u128,
     ) -> (u128, u128) {
-        let used_amount: Balance = self.get_used_amount(amount);
-        if used_amount > 0 {
-            self.internal_contract_withdraw(owner_id, used_amount, contract_id, receiver_id);
-            return (amount, used_amount)
+        let unused_amount: Balance = self.get_unused_amount(amount);
+        if unused_amount > 0 {
+            self.internal_contract_deposit(owner_id, unused_amount, contract_id, receiver_id);
+            return (amount, unused_amount)
         }
+        FtWithdraw {
+            owner_id: owner_id,
+            amount: &(amount - unused_amount).into(),
+            memo: Some(&json!({
+                "contract_id": contract_id,
+                "deposit_contract_id": receiver_id
+            }).to_string()),
+        }
+        .emit();
         (amount, 0)
     }
+
+    
 
     /// Internal method that returns the amount of burned tokens in a corner case when the sender
     /// has deleted (unregistered) their account while the `ft_transfer_call` was still in flight.
@@ -445,11 +418,19 @@ impl FungibleToken {
         amount: u128,
     ) -> (u128, u128) {
         // Get the used amount from the `ft_on_transfer` call result.
-        let used_amount: Balance = self.get_used_amount(amount);
-        if used_amount > 0 {
-            self.internal_withdraw(owner_id, used_amount, &contract_id);
-            return (amount, used_amount)
+        let unused_amount: Balance = self.get_unused_amount(amount);
+        if unused_amount > 0 {
+            self.internal_deposit(owner_id, unused_amount, contract_id);
+            return (amount, unused_amount)
         }
+        FtBurn {
+            owner_id: owner_id,
+            amount: &(amount - unused_amount).into(),
+            memo: Some(&json!({
+                "contract_id": contract_id
+            }).to_string()),
+        }
+        .emit();
         (amount, 0)
     }
 }
